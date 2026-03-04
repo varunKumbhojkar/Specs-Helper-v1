@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ClearView — Specs Helper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --panel: #1a1a26;
+    --accent: #7fffd4;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --text: #e8e8f0;
+    --muted: #5a5a7a;
+    --border: #2a2a40;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .mode-badge {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  /* CAMERA AREA */
+  #camera-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #rawVideo {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #outputCanvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Start screen overlay */
+  #start-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: radial-gradient(ellipse at center, #1a1a30 0%, #0a0a0f 70%);
+    z-index: 5;
+  }
+
+  .eye-icon {
+    width: 80px;
+    height: 80px;
+    border: 2px solid var(--accent);
+    border-radius: 50% 0 50% 0;
+    transform: rotate(45deg);
+    position: relative;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .eye-icon::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px; height: 24px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(127,255,212,0.4); }
+    50% { box-shadow: 0 0 0 16px rgba(127,255,212,0); }
+  }
+
+  .start-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+  .start-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 240px;
+  }
+
+  #startBtn {
+    margin-top: 8px;
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    padding: 14px 36px;
+    border-radius: 4px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    touch-action: manipulation;
+  }
+  #startBtn:active { transform: scale(0.97); }
+  #startBtn:hover { box-shadow: 0 0 24px rgba(127,255,212,0.4); }
+
+  /* CONTROLS PANEL */
+  #controls {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 14px 18px 18px;
+    flex-shrink: 0;
+    max-height: 52vh;
+    overflow-y: auto;
+  }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ctrl-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .ctrl-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .ctrl-label .val {
+    color: var(--accent);
+    font-weight: 400;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(127,255,212,0.5);
+    transition: transform 0.1s;
+  }
+  input[type=range]:active::-webkit-slider-thumb { transform: scale(1.3); }
+
+  /* Preset buttons */
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .preset-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .preset-btn:active, .preset-btn.active {
+    background: var(--accent);
+    color: #0a0a0f;
+    border-color: var(--accent);
+  }
+
+  /* Bottom action row */
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .action-btn:active { opacity: 0.7; transform: scale(0.98); }
+  .action-btn.primary {
+    background: var(--accent);
+    color: #0a0a0f;
+    border-color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* Freeze indicator */
+  #freeze-indicator {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,107,107,0.9);
+    color: #fff;
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: none;
+    z-index: 6;
+  }
+  #freeze-indicator.visible { display: block; }
+
+  /* FPS counter */
+  #fps {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    font-size: 0.6rem;
+    color: rgba(127,255,212,0.5);
+    z-index: 6;
+    pointer-events: none;
+  }
+
+  /* Scrollbar */
+  #controls::-webkit-scrollbar { width: 3px; }
+  #controls::-webkit-scrollbar-track { background: transparent; }
+  #controls::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">Clear<span>View</span></div>
+    <div class="mode-badge" id="modeLabel">Live</div>
+  </header>
+
+  <div id="camera-wrap">
+    <video id="rawVideo" autoplay playsinline muted></video>
+    <canvas id="outputCanvas"></canvas>
+    <div id="freeze-indicator">⏸ FROZEN</div>
+    <div id="fps"></div>
+
+    <div id="start-screen">
+      <div class="eye-icon"></div>
+      <div class="start-title">ClearView</div>
+      <div class="start-sub">Corrects your camera view in real-time — no glasses needed.</div>
+      <button id="startBtn">Start Camera</button>
+    </div>
+  </div>
+
+  <div id="controls">
+    <!-- Presets -->
+    <div class="presets">
+      <button class="preset-btn" onclick="applyPreset('nearsight-mild')">Nearsighted –2</button>
+      <button class="preset-btn" onclick="applyPreset('nearsight-mod')">Nearsighted –4</button>
+      <button class="preset-btn" onclick="applyPreset('farsight-mild')">Farsighted +2</button>
+      <button class="preset-btn" onclick="applyPreset('farsight-mod')">Farsighted +4</button>
+      <button class="preset-btn" onclick="applyPreset('reset')">Reset</button>
+    </div>
+
+    <div class="controls-grid">
+      <div class="ctrl-group">
+        <div class="ctrl-label">Sharpness <span class="val" id="v-sharp">0</span></div>
+        <input type="range" id="s-sharp" min="-5" max="15" step="0.5" value="0">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Contrast <span class="val" id="v-contrast">1.0</span></div>
+        <input type="range" id="s-contrast" min="0.5" max="2.5" step="0.05" value="1.0">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Edge Boost <span class="val" id="v-edge">0</span></div>
+        <input type="range" id="s-edge" min="0" max="5" step="0.1" value="0">
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-label">Brightness <span class="val" id="v-bright">1.0</span></div>
+        <input type="range" id="s-bright" min="0.5" max="2.0" step="0.05" value="1.0">
+      </div>
+      <div class="ctrl-group full-width">
+        <div class="ctrl-label">Color Saturation <span class="val" id="v-sat">1.0</span></div>
+        <input type="range" id="s-sat" min="0" max="3" step="0.05" value="1.0">
+      </div>
+      <div class="ctrl-group full-width">
+        <div class="ctrl-label">High-Freq Detail <span class="val" id="v-hf">0</span></div>
+        <input type="range" id="s-hf" min="0" max="5" step="0.1" value="0">
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="action-btn" id="freezeBtn">Freeze</button>
+      <button class="action-btn" id="flipBtn">Flip Cam</button>
+      <button class="action-btn primary" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('rawVideo');
+const canvas = document.getElementById('outputCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+const startScreen = document.getElementById('start-screen');
+const startBtn = document.getElementById('startBtn');
+const freezeBtn = document.getElementById('freezeBtn');
+const flipBtn = document.getElementById('flipBtn');
+const saveBtn = document.getElementById('saveBtn');
+const modeLabel = document.getElementById('modeLabel');
+const freezeIndicator = document.getElementById('freeze-indicator');
+const fpsDisplay = document.getElementById('fps');
+
+let stream = null;
+let frozen = false;
+let frozenImageData = null;
+let facingMode = 'environment';
+let animFrame = null;
+let lastTime = 0;
+let frameCount = 0;
+let fps = 0;
+
+// Slider refs
+const sliders = {
+  sharp: document.getElementById('s-sharp'),
+  contrast: document.getElementById('s-contrast'),
+  edge: document.getElementById('s-edge'),
+  bright: document.getElementById('s-bright'),
+  sat: document.getElementById('s-sat'),
+  hf: document.getElementById('s-hf'),
+};
+const vals = {
+  sharp: document.getElementById('v-sharp'),
+  contrast: document.getElementById('v-contrast'),
+  edge: document.getElementById('v-edge'),
+  bright: document.getElementById('v-bright'),
+  sat: document.getElementById('v-sat'),
+  hf: document.getElementById('v-hf'),
+};
+
+Object.entries(sliders).forEach(([k, el]) => {
+  el.addEventListener('input', () => {
+    vals[k].textContent = parseFloat(el.value).toFixed(el.step.includes('.') ? (el.step.split('.')[1].length) : 0);
+  });
+});
+
+function applyPreset(name) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const presets = {
+    'nearsight-mild': { sharp: 6, contrast: 1.2, edge: 1.5, bright: 1.05, sat: 1.1, hf: 1.5 },
+    'nearsight-mod':  { sharp: 11, contrast: 1.4, edge: 3, bright: 1.1, sat: 1.2, hf: 3 },
+    'farsight-mild':  { sharp: 3, contrast: 1.15, edge: 0.8, bright: 1.0, sat: 1.05, hf: 0.8 },
+    'farsight-mod':   { sharp: 5, contrast: 1.3, edge: 1.5, bright: 1.05, sat: 1.1, hf: 1.5 },
+    'reset':          { sharp: 0, contrast: 1.0, edge: 0, bright: 1.0, sat: 1.0, hf: 0 },
+  };
+  const p = presets[name];
+  if (!p) return;
+  Object.entries(p).forEach(([k, v]) => {
+    sliders[k].value = v;
+    sliders[k].dispatchEvent(new Event('input'));
+  });
+}
+
+// --- CAMERA ---
+async function startCamera() {
+  try {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false,
+    });
+    video.srcObject = stream;
+    await video.play();
+    startScreen.style.display = 'none';
+    requestAnimationFrame(renderLoop);
+  } catch (e) {
+    alert('Camera access denied or unavailable: ' + e.message);
+  }
+}
+
+startBtn.addEventListener('click', startCamera);
+flipBtn.addEventListener('click', () => {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+});
+
+// --- FREEZE ---
+freezeBtn.addEventListener('click', () => {
+  frozen = !frozen;
+  if (frozen) {
+    frozenImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    freezeIndicator.classList.add('visible');
+    modeLabel.textContent = 'Frozen';
+  } else {
+    frozenImageData = null;
+    freezeIndicator.classList.remove('visible');
+    modeLabel.textContent = 'Live';
+  }
+});
+
+// --- SAVE ---
+saveBtn.addEventListener('click', () => {
+  const link = document.createElement('a');
+  link.download = 'clearview-' + Date.now() + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+// --- RENDER LOOP ---
+function renderLoop(ts) {
+  animFrame = requestAnimationFrame(renderLoop);
+
+  // FPS
+  frameCount++;
+  if (ts - lastTime >= 1000) {
+    fps = frameCount;
+    frameCount = 0;
+    lastTime = ts;
+    fpsDisplay.textContent = fps + ' fps';
+  }
+
+  if (frozen && frozenImageData) {
+    ctx.putImageData(frozenImageData, 0, 0);
+    applyFilters();
+    return;
+  }
+
+  if (!video.videoWidth) return;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+  applyFilters();
+}
+
+// --- PIXEL PROCESSING ---
+function applyFilters() {
+  const sharpness = parseFloat(sliders.sharp.value);
+  const contrast = parseFloat(sliders.contrast.value);
+  const edgeBoost = parseFloat(sliders.edge.value);
+  const brightness = parseFloat(sliders.bright.value);
+  const saturation = parseFloat(sliders.sat.value);
+  const hfDetail = parseFloat(sliders.hf.value);
+
+  const w = canvas.width, h = canvas.height;
+  if (!w || !h) return;
+
+  const imageData = ctx.getImageData(0, 0, w, h);
+  const data = imageData.data;
+
+  // 1. Brightness + Contrast + Saturation (per-pixel, fast)
+  const cMid = 128;
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+
+    // Brightness
+    r *= brightness; g *= brightness; b *= brightness;
+
+    // Contrast
+    r = (r - cMid) * contrast + cMid;
+    g = (g - cMid) * contrast + cMid;
+    b = (b - cMid) * contrast + cMid;
+
+    // Saturation
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    r = lum + (r - lum) * saturation;
+    g = lum + (g - lum) * saturation;
+    b = lum + (b - lum) * saturation;
+
+    data[i]   = Math.max(0, Math.min(255, r));
+    data[i+1] = Math.max(0, Math.min(255, g));
+    data[i+2] = Math.max(0, Math.min(255, b));
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+
+  // 2. Sharpening via unsharp mask (canvas filter trick)
+  if (sharpness > 0 || hfDetail > 0) {
+    sharpenCanvas(w, h, sharpness, hfDetail);
+  }
+
+  // 3. Edge enhancement overlay
+  if (edgeBoost > 0) {
+    edgeEnhance(w, h, edgeBoost);
+  }
+}
+
+function sharpenCanvas(w, h, sharpness, hfDetail) {
+  // Unsharp mask: original - blur(original) = high freq; blend back
+  const offscreen = document.createElement('canvas');
+  offscreen.width = w; offscreen.height = h;
+  const offCtx = offscreen.getContext('2d');
+
+  // Copy current canvas
+  offCtx.drawImage(canvas, 0, 0);
+
+  // Create blurred version
+  const blurCanvas = document.createElement('canvas');
+  blurCanvas.width = w; blurCanvas.height = h;
+  const blurCtx = blurCanvas.getContext('2d');
+  blurCtx.filter = `blur(${Math.max(0.5, (sharpness + hfDetail) * 0.3)}px)`;
+  blurCtx.drawImage(canvas, 0, 0);
+
+  // Get both images
+  const orig = offCtx.getImageData(0, 0, w, h).data;
+  const blurred = blurCtx.getImageData(0, 0, w, h).data;
+  const result = ctx.getImageData(0, 0, w, h);
+  const res = result.data;
+
+  const amount = (sharpness * 0.08) + (hfDetail * 0.06);
+
+  for (let i = 0; i < res.length; i += 4) {
+    res[i]   = Math.max(0, Math.min(255, orig[i]   + (orig[i]   - blurred[i])   * amount));
+    res[i+1] = Math.max(0, Math.min(255, orig[i+1] + (orig[i+1] - blurred[i+1]) * amount));
+    res[i+2] = Math.max(0, Math.min(255, orig[i+2] + (orig[i+2] - blurred[i+2]) * amount));
+  }
+  ctx.putImageData(result, 0, 0);
+}
+
+function edgeEnhance(w, h, strength) {
+  // Sobel-lite: draw edge overlay using difference-of-gaussians
+  const edgeCanvas = document.createElement('canvas');
+  edgeCanvas.width = w; edgeCanvas.height = h;
+  const edgeCtx = edgeCanvas.getContext('2d');
+
+  // Blur 1 (tight)
+  edgeCtx.filter = 'blur(0.5px)';
+  edgeCtx.drawImage(canvas, 0, 0);
+  const tight = edgeCtx.getImageData(0, 0, w, h).data;
+
+  // Blur 2 (wide)
+  edgeCtx.clearRect(0,0,w,h);
+  edgeCtx.filter = `blur(${1.5 + strength * 0.3}px)`;
+  edgeCtx.drawImage(canvas, 0, 0);
+  const wide = edgeCtx.getImageData(0, 0, w, h).data;
+
+  const current = ctx.getImageData(0, 0, w, h);
+  const res = current.data;
+  const amt = strength * 0.35;
+
+  for (let i = 0; i < res.length; i += 4) {
+    const diff = (tight[i] - wide[i]) + (tight[i+1] - wide[i+1]) + (tight[i+2] - wide[i+2]);
+    const edge = Math.abs(diff) / 3;
+    res[i]   = Math.min(255, res[i]   + edge * amt);
+    res[i+1] = Math.min(255, res[i+1] + edge * amt * 0.9);
+    res[i+2] = Math.min(255, res[i+2] + edge * amt * 0.9);
+  }
+  ctx.putImageData(current, 0, 0);
+}
+
+// Resize canvas on orientation change
+window.addEventListener('resize', () => {
+  if (video.videoWidth) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+});
+</script>
+</body>
+</html>
